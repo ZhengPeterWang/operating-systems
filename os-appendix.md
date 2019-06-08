@@ -175,11 +175,11 @@ void Qunlock(Qlock_t *m)
 void mutex_lock(int *mutex){
     int v;
     if (atomic_bit_test_set(mutex, 31) == 0)
-        return;
-    atomic_increment(mutex);
+        return;// get lock
+    atomic_increment(mutex);// pushqueue
     while (1){
         if (atomic_bit_test_set(mutex, 31) == 0){
-            atomic_decrement(mutex);
+            atomic_decrement(mutex); // pullqueue
             return;
         }
         v = *mutex;
@@ -193,5 +193,30 @@ void mutex_unlock (int *mutex){
     if (atomic_add_zero(mutex, 0x80000000))
         return;
     futex_wake(mutex);
+}
+```
+
+```java
+public class Lock{
+    public boolean flag;
+    public Queue<Integer> queue;
+    public void lock(int thread){
+        if (flag == false && queue.isEmpty()){
+            flag = true;
+            return;
+        }// atomic
+        queue.add(thread);
+        while(true){
+            if (flag == false){
+                queue.poll();
+                return;
+            }
+            wait();
+        }
+    }
+    public void unlock(int thread){
+        flag = false;
+        notify(queue.peek());
+    }
 }
 ```
