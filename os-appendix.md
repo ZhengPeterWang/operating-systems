@@ -197,26 +197,67 @@ void mutex_unlock (int *mutex){
 ```
 
 ```java
-public class Lock{
-    public boolean flag;
-    public Queue<Integer> queue;
-    public void lock(int thread){
-        if (flag == false && queue.isEmpty()){
-            flag = true;
-            return;
-        }// atomic
-        queue.add(thread);
-        while(true){
-            if (flag == false){
-                queue.poll();
-                return;
+public class RWLock {
+    int num_readers = 0;
+    int num_writers_waiting = 0;
+    int held_count = 0; // number of times held by current writer
+    Thread writer = null; // null if not locked by a writer
+    Lock rdLock = new ReadLock();
+    Lock wrLock = new WriteLock();
+
+    public Lock readLock() { return rdLock; }
+    public Lock writeLock() { return wrLock; }
+
+    class ReadLock implements Lock {
+        public void lock() {
+            synchronized (RWLock.this) {
+                while (writer != null || num_writers_waiting != 0) { // TODO: What two conditions should the reader wait on?
+                    try {
+                        RWLock.this.wait();
+                    } catch (Exception e) {} 
+                }
+                num_readers ++;
+                // TODO: If the code gets here, what has happened?
             }
-            wait();
+        }
+        @Override
+        public void unlock() {
+            synchronized (RWLock.this) {
+                num_readers--;
+                if (num_readers == 0 && num_writers_waiting != 0) { // TODO: Under what condition would you notify?
+                    RWLock.this.notifyAll();
+                }
+            }
         }
     }
-    public void unlock(int thread){
-        flag = false;
-        notify(queue.peek());
+
+    public class WriteLock implements Lock {
+        public void lock() {
+            Thread me = Thread.currentThread();
+            synchronized (RWLock.this) {
+                if (writer == me) { held_count++; return; } // already holding the lock
+                num_writers_waiting++;
+
+                while (writer != null || num_readers != 0) { // TODO: What two conditions should the writer wait on?
+                    try {
+                        RWLock.this.wait();
+                    } catch (Exception e) {}
+                }
+                writer = me;
+                held_count ++;
+                num_writers_waiting --;
+                // TODO: If the code gets here, what has happened?
+            }
+        }
+        public void unlock() {
+            synchronized (RWLock.this) {
+                held_count--;
+                if (held_count > 0) return; // still holding it!
+                writer = null;
+                RWLock.this.notifyAll();
+            }
+        }
     }
 }
+
 ```
