@@ -196,6 +196,24 @@ void mutex_unlock (int *mutex){
 }
 ```
 
+### 使用wait和notifyAll系统调用的java锁
+
+```java
+public class Lock{
+    public boolean flag = false;
+    public synchronized void lock(){
+        while(flag) wait();
+        flag = true;
+    }
+    public synchronized void unlock(){
+        flag = false;
+        notifyAll();
+    }
+}
+```
+
+### 使用wait和notifyAll系统调用的Java读写锁
+
 ```java
 public class RWLock {
     int num_readers = 0;
