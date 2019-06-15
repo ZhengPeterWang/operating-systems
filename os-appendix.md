@@ -232,7 +232,7 @@ public class RWLock {
                 while (writer != null || num_writers_waiting != 0) { // TODO: What two conditions should the reader wait on?
                     try {
                         RWLock.this.wait();
-                    } catch (Exception e) {} 
+                    } catch (Exception e) {}
                 }
                 num_readers ++;
                 // TODO: If the code gets here, what has happened?
