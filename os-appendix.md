@@ -212,6 +212,86 @@ public class Lock{
 }
 ```
 
+## 2.4 附录 信号量问题
+
+### 最简单的读写锁
+
+```python
+int readers = 0
+mutex = Semaphore(1)
+roomEmpty = Semaphore(1)
+
+# writers
+roomEmpty.wait()
+    # writer critical section
+roomEmpty.signal()
+
+# readers
+mutex.wait()
+    readers += 1
+    if readers == 1:
+        roomEmpty.wait()
+mutex.signal()
+
+# reader critical section
+
+mutex.wait()
+    readers -= 1
+    if readers == 0:
+        roomEmpty.signal()
+mutex.signal()
+```
+
+### 不会导致饥饿的读写锁
+
+```python
+readSwitch = Lightswitch()
+roomEmpty = Semaphore(1)
+turnstile = Semaphore(1)
+
+# writers
+
+turnstile.wait()
+    roomEmpty.wait()
+    # writers critical section
+turnstile.signal()
+roomEmpty.signal()
+
+# readers
+
+turnstile.wait()
+turnstile.signal()
+readSwitch.lock(roomEmpty)
+    # readers critical section
+readSwitch.unlock(roomEmpty)
+```
+
+### writer优先的读写锁
+
+```python
+readSwitch = Lightswitch()
+writeSwitch = Lightswitch()
+noReaders = Semaphore(1)
+noWriters = Semaphore(1)
+
+# readers
+noReaders.wait()
+    readSwitch.lock(noWriters)
+noReaders.signal()
+
+# readers critical section
+
+readSwitch.unlock(noWriters)
+
+# writers
+writeSwitch.lock(noReaders)
+    noWriters.wait()
+    # writers critical section
+    noWriters.signal()
+writeSwitch.unlock(noReaders)
+
+```
+
 ### 使用wait和notifyAll系统调用的Java读写锁
 
 ```java
