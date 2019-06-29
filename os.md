@@ -175,11 +175,11 @@ Linux系统的地址空间为32位或64位。四分之三的空间归用户，�
 
 在Java当中，条件变量称为wait/notify机制。除了整个程序中只能有一个条件变量以外，其余与这里讲的POSIX的wait/signal条件变量没有不同。
 
+条件变量实现中会遇到两个问题：第一，当线程1等待时，线程2发了信号，是线程1应该立即执行，还是线程2应该执行完其剩余的内容？前者称为Hoare semantics，而后者称为Mesa semantics。现代大部分系统采用的都是Mesa semantics，尽管Java语言实现监视器的notify/wait方法与两者都有[不同](https://cseweb.ucsd.edu/classes/sp16/cse120-a/applications/ln/lecture9.html)，把决定该问题的权力直接交给系统线程调度。第二个问题称为条件覆盖。当有多个线程等待，且另一线程发送信号时，唤醒队列中的第一个线程是否合适？Lampson和Redell认为，所有的线程都应该被唤醒，先到先得，即把signal换成broadcast（POSIX），或把notify换成notifyAll（Java）。
+
 #### 2.3.2 条件变量的作用
 
 条件变量能够解决很多问题。类似于在3110中学过的promise的作用，条件变量可以保证两个线程可以以一定的顺序执行。join问题是指让父线程生成子线程，且让子线程结束后父进程再结束的问题，这个问题可以用条件变量解决，且应该用一个普通变量done协助完成。producer/consumer问题（或称bounded buffer问题）是指一类线程为producer，一类线程为consumer，producer往有限的缓冲区存储数据，consumer从缓冲区拿出数据，要保证这种操作线程安全的问题。可以使用两个条件变量和一个公用互斥锁解决这个问题。
-
-条件变量实现中会遇到两个问题：第一，当线程1等待时，线程2发了信号，是线程1应该立即执行，还是线程2应该执行完其剩余的内容？前者称为Hoare semantics，而后者称为Mesa semantics。现代大部分系统采用的都是Mesa semantics，尽管Java语言实现监视器的notify/wait方法与两者都有[不同](https://cseweb.ucsd.edu/classes/sp16/cse120-a/applications/ln/lecture9.html)，把决定该问题的权力直接交给系统线程调度。第二个问题称为条件覆盖。当有多个线程等待，且另一线程发送信号时，唤醒队列中的第一个线程是否合适？Lampson和Redell认为，所有的线程都应该被唤醒，先到先得，即把signal换成broadcast（POSIX），或把notify换成notifyAll（Java）。
 
 ### 2.4 信号量（Semaphore）
 
